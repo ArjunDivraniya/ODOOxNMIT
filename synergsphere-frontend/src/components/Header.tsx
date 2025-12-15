@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Bell, ChevronDown, User, Settings, LogOut, Mail, HelpCircle, Sun, Moon } from 'lucide-react';
+import { Search, Bell, ChevronDown, User, Settings, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -26,24 +26,47 @@ export default function Header() {
 
   const userNavigation = [
     { name: 'My Projects', path: '/dashboard' },
-    { name: 'Settings', path: '/settings' },
+    { name: 'Settings', path: '/dashboard?tab=settings' },
   ];
   const adminNavigation = [
     { name: 'Admin Dashboard', path: '/admin/dashboard' },
     { name: 'My Projects', path: '/dashboard' },
-    { name: 'Settings', path: '/settings' },
+    { name: 'Settings', path: '/dashboard?tab=settings' },
   ];
 
   const navigationItems = user?.role === 'admin' ? adminNavigation : userNavigation;
 
   return (
     <>
-      <header className="border-b bg-white">
-        <div className="flex h-16 items-center px-4">
-          <div className="flex items-center space-x-4">
-            <Link to={user?.role === 'admin' ? '/admin/dashboard' : '/dashboard'} className="font-bold">
+      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur">
+        <div className="container flex h-16 items-center justify-between px-4">
+          {/* Logo */}
+          <Link to={user?.role === 'admin' ? '/admin/dashboard' : '/dashboard'} 
+                className="flex items-center space-x-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-teal-500">
+              <span className="font-bold text-white">SS</span>
+            </div>
+            <span className="hidden text-xl font-bold bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent sm:inline-block">
               SynergySphere
-            </Link>
+            </span>
+          </Link>
+
+          {/* Search Bar - Only show on larger screens */}
+          <div className="hidden flex-1 px-6 md:block">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search..."
+                className="w-full rounded-lg bg-muted pl-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Right Side Actions */}
+          <div className="flex items-center gap-2">
             {user && (
               <nav className="hidden md:flex items-center space-x-6 text-sm">
                 {navigationItems.map((item) => (
@@ -54,7 +77,6 @@ export default function Header() {
               </nav>
             )}
           </div>
-
           <div className="flex-1 max-w-md mx-8">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -67,7 +89,6 @@ export default function Header() {
               />
             </div>
           </div>
-
           <div className="ml-auto flex items-center space-x-4">
             {user ? (
               <>
@@ -114,7 +135,6 @@ export default function Header() {
                     </div>
                   </PopoverContent>
                 </Popover>
-
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="flex items-center space-x-2 hover:bg-gray-100">

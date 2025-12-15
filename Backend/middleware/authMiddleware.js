@@ -1,5 +1,8 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 // Verify token and attach user
 export const protect = async (req, res, next) => {
@@ -16,8 +19,13 @@ export const protect = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, "your_jwt_secret");
-    req.user = await User.findById(decoded.userId).select("-password");
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "your_jwt_secret");
+    req.user = await User.findById(decoded.id || decoded.userId).select("-password");
+    
+    if (!req.user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+    
     next();
   } catch (err) {
     res.status(401).json({ message: "Token invalid" });

@@ -44,21 +44,55 @@ export default function ProjectModal({ open, onOpenChange }: ProjectModalProps) 
     setFormData(prev => ({ ...prev, passkey: result }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
-    console.log('Project created:', formData);
-    onOpenChange(false);
-    // Reset form
-    setFormData({
-      name: '',
-      description: '',
-      startDate: '',
-      endDate: '',
-      members: [],
-      passkey: ''
-    });
+  
+    // Transform members from IDs to emails (based on mockUsers)
+    const teamMemberEmails = formData.members.map(
+      id => mockUsers.find(user => user.id === id)?.email
+    ).filter(Boolean) as string[];
+  
+    const payload = {
+      name: formData.name,
+      description: formData.description,
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      teamMemberEmails, // Backend expects emails
+      passkey: formData.passkey
+    };
+  
+    try {
+      const res = await fetch("http://localhost:5000/api/projects", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+  
+      if (!res.ok) {
+        throw new Error("Failed to create project");
+      }
+  
+      const data = await res.json();
+      console.log("✅ Project created:", data);
+  
+      // Close modal & reset form
+      onOpenChange(false);
+      setFormData({
+        name: '',
+        description: '',
+        startDate: '',
+        endDate: '',
+        members: [],
+        passkey: ''
+      });
+  
+    } catch (error) {
+      console.error("❌ Error creating project:", error);
+    }
   };
+  
 
   const toggleMember = (userId: string) => {
     setFormData(prev => ({

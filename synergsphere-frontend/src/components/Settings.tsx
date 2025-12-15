@@ -1,346 +1,277 @@
 import { useState } from 'react';
-import {
-  User as UserIcon,
-  Shield,
-  Bell,
-  Palette,
-  Briefcase,
-  Settings as SettingsIcon,
-  Download,
-  Trash2,
-  Sun,
-  Laptop,
-  Moon,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
+import { User, Shield, Bell, Palette, Building, Settings as SettingsIcon, Moon, Sun } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { currentUser } from '@/lib/userMockData';
-import { cn } from '@/lib/utils';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useTheme } from 'next-themes';
 
-type SettingsTab =
-  | 'profile'
-  | 'security'
-  | 'notifications'
-  | 'preferences'
-  | 'project-settings'
-  | 'account';
+interface SettingsProps {
+  isDarkMode: boolean;
+  onThemeToggle: () => void;
+}
 
-const navItems = {
-  general: [
-    { id: 'profile', name: 'Profile', icon: UserIcon },
-    { id: 'security', name: 'Security', icon: Shield },
-    { id: 'notifications', name: 'Notifications', icon: Bell },
-    { id: 'preferences', name: 'Preferences', icon: Palette },
-  ],
-  admin: [
-    { id: 'project-settings', name: 'Project Settings', icon: Briefcase },
-  ],
-  other: [
-    { id: 'account', name: 'Account', icon: SettingsIcon },
-  ],
-};
+export default function Settings({ isDarkMode, onThemeToggle }: SettingsProps) {
+  const [profile, setProfile] = useState({
+    name: 'Alex Johnson',
+    email: 'alex.johnson@synergysphere.com',
+    bio: 'System Administrator with 5+ years of experience in team management and project coordination.',
+    phone: '+1 (555) 123-4567',
+    location: 'San Francisco, CA'
+  });
 
-const SettingsSidebar = ({ activeTab, onTabChange, isAdmin }: { activeTab: SettingsTab; onTabChange: (tab: SettingsTab) => void; isAdmin: boolean; }) => (
-  <nav className="flex flex-col space-y-2 p-4 border-r bg-white">
-    <h3 className="text-lg font-semibold mb-2">General</h3>
-    {navItems.general.map((item) => {
-      const Icon = item.icon;
-      const isActive = activeTab === item.id;
-      return (
-        <Button
-          key={item.id}
-          variant="ghost"
-          className={cn(
-            "w-full justify-start space-x-3",
-            isActive && "bg-blue-500 text-white hover:bg-blue-600"
-          )}
-          onClick={() => onTabChange(item.id as SettingsTab)}
-        >
-          <Icon className="w-5 h-5" />
-          <span>{item.name}</span>
-        </Button>
-      );
-    })}
-
-    {isAdmin && (
-      <>
-        <Separator className="my-2" />
-        <h3 className="text-lg font-semibold mb-2">Admin Only</h3>
-        {navItems.admin.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeTab === item.id;
-          return (
-            <Button
-              key={item.id}
-              variant="ghost"
-              className={cn(
-                "w-full justify-start space-x-3",
-                isActive && "bg-blue-500 text-white hover:bg-blue-600"
-              )}
-              onClick={() => onTabChange(item.id as SettingsTab)}
-            >
-              <Icon className="w-5 h-5" />
-              <span>{item.name}</span>
-            </Button>
-          );
-        })}
-      </>
-    )}
-
-    <Separator className="my-2" />
-    <h3 className="text-lg font-semibold mb-2">Other</h3>
-    {navItems.other.map((item) => {
-      const Icon = item.icon;
-      const isActive = activeTab === item.id;
-      return (
-        <Button
-          key={item.id}
-          variant="ghost"
-          className={cn(
-            "w-full justify-start space-x-3",
-            isActive && "bg-blue-500 text-white hover:bg-blue-600"
-          )}
-          onClick={() => onTabChange(item.id as SettingsTab)}
-        >
-          <Icon className="w-5 h-5" />
-          <span>{item.name}</span>
-        </Button>
-      );
-    })}
-  </nav>
-);
-
-const ProfileSettings = () => (
-  <Card>
-    <CardHeader>
-      <CardTitle>Profile Settings</CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="name">Full Name</Label>
-        <Input id="name" placeholder="Alex Johnson" defaultValue={currentUser.name} />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="email">Email Address</Label>
-        <Input id="email" type="email" placeholder="alex@synergysphere.com" defaultValue={currentUser.email} />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="phone">Phone Number</Label>
-        <Input id="phone" type="tel" placeholder="(123) 456-7890" />
-      </div>
-      <Button>Save Profile</Button>
-    </CardContent>
-  </Card>
-);
-
-const SecuritySettings = () => (
-  <Card>
-    <CardHeader>
-      <CardTitle>Security</CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="old-password">Current Password</Label>
-        <Input id="old-password" type="password" />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="new-password">New Password</Label>
-        <Input id="new-password" type="password" />
-      </div>
-      <Button>Change Password</Button>
-      <Separator />
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <p className="font-medium">Two-Factor Authentication (2FA)</p>
-          <p className="text-sm text-muted-foreground">Add an extra layer of security to your account.</p>
-        </div>
-        <Switch />
-      </div>
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <p className="font-medium">Manage Devices</p>
-          <p className="text-sm text-muted-foreground">View and log out of active sessions.</p>
-        </div>
-        <Button variant="outline">View Devices</Button>
-      </div>
-    </CardContent>
-  </Card>
-);
-
-const NotificationSettings = () => (
-  <Card>
-    <CardHeader>
-      <CardTitle>Notifications</CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <p className="font-medium">Email Notifications</p>
-          <p className="text-sm text-muted-foreground">Receive email alerts for important updates.</p>
-        </div>
-        <Switch />
-      </div>
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <p className="font-medium">In-app Notifications</p>
-          <p className="text-sm text-muted-foreground">Get real-time alerts within the application.</p>
-        </div>
-        <Switch defaultChecked />
-      </div>
-      <div className="space-y-2">
-        <Label>Reminder Frequency</Label>
-        <Select>
-          <SelectTrigger>
-            <SelectValue placeholder="Daily" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="daily">Daily</SelectItem>
-            <SelectItem value="weekly">Weekly</SelectItem>
-            <SelectItem value="custom">Custom</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-    </CardContent>
-  </Card>
-);
-
-const PreferencesSettings = () => {
-  const { theme, setTheme } = useTheme();
+  const [notifications, setNotifications] = useState({
+    emailNotifications: true,
+    pushNotifications: true,
+    taskAssignments: true,
+    deadlineReminders: true,
+    projectUpdates: false,
+    weeklyReports: true
+  });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Preferences</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label>Appearance</Label>
-          <Tabs defaultValue={theme} onValueChange={(value) => setTheme(value as 'light' | 'dark' | 'system')}>
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="light" className="flex items-center space-x-2">
-                <Sun className="h-4 w-4" />
-                <span>Light</span>
-              </TabsTrigger>
-              <TabsTrigger value="dark" className="flex items-center space-x-2">
-                <Moon className="h-4 w-4" />
-                <span>Dark</span>
-              </TabsTrigger>
-              <TabsTrigger value="system" className="flex items-center space-x-2">
-                <Laptop className="h-4 w-4" />
-                <span>System</span>
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-        <div className="space-y-2">
-          <Label>Language</Label>
-          <Select>
-            <SelectTrigger>
-              <SelectValue placeholder="English" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="en">English</SelectItem>
-              <SelectItem value="es">Spanish</SelectItem>
-              <SelectItem value="fr">French</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">Manage your account and application preferences</p>
+      </div>
 
-const AdminSettings = () => (
-  <Card>
-    <CardHeader>
-      <CardTitle>Project Settings</CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="companyName">Company Name</Label>
-        <Input id="companyName" placeholder="SynergySphere" />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="logo">Company Logo URL</Label>
-        <Input id="logo" placeholder="https://..." />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="companyDescription">Company Description</Label>
-        <Input id="companyDescription" placeholder="Description..." />
-      </div>
-      <Button>Save Company Settings</Button>
-    </CardContent>
-  </Card>
-);
+      <Tabs defaultValue="profile" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="profile" className="flex items-center space-x-2">
+            <User className="w-4 h-4" />
+            <span className="hidden sm:inline">Profile</span>
+          </TabsTrigger>
+          <TabsTrigger value="security" className="flex items-center space-x-2">
+            <Shield className="w-4 h-4" />
+            <span className="hidden sm:inline">Security</span>
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center space-x-2">
+            <Bell className="w-4 h-4" />
+            <span className="hidden sm:inline">Notifications</span>
+          </TabsTrigger>
+          <TabsTrigger value="preferences" className="flex items-center space-x-2">
+            <Palette className="w-4 h-4" />
+            <span className="hidden sm:inline">Preferences</span>
+          </TabsTrigger>
+        </TabsList>
 
-const AccountManagement = () => (
-  <Card>
-    <CardHeader>
-      <CardTitle>Account Management</CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-4">
-      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-        <div className="space-y-1">
-          <p className="font-medium">Export Profile Data</p>
-          <p className="text-sm text-muted-foreground">Download your personal data and activity logs.</p>
-        </div>
-        <Button variant="outline" size="sm">
-          <Download className="w-4 h-4 mr-2" />
-          Export
-        </Button>
-      </div>
-      <div className="flex items-center justify-between p-4 bg-red-50 rounded-lg">
-        <div className="space-y-1">
-          <p className="font-medium text-red-600">Delete Account</p>
-          <p className="text-sm text-muted-foreground">Permanently delete your account and all associated data.</p>
-        </div>
-        <Button variant="destructive" size="sm">
-          <Trash2 className="w-4 h-4 mr-2" />
-          Delete
-        </Button>
-      </div>
-    </CardContent>
-  </Card>
-);
+        <TabsContent value="profile">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle>Profile Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center space-x-6">
+                  <Avatar className="w-24 h-24">
+                    <AvatarImage src="/api/placeholder/96/96" alt="Profile" />
+                    <AvatarFallback className="text-2xl">AJ</AvatarFallback>
+                  </Avatar>
+                  <div className="space-y-2">
+                    <Button variant="outline">Change Avatar</Button>
+                    <p className="text-sm text-gray-500">JPG, GIF or PNG. 1MB max.</p>
+                  </div>
+                </div>
 
-export default function Settings() {
-  const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
-  const isAdmin = currentUser.role === 'admin';
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input
+                      id="name"
+                      value={profile.name}
+                      onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={profile.email}
+                      onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone</Label>
+                    <Input
+                      id="phone"
+                      value={profile.phone}
+                      onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="location">Location</Label>
+                    <Input
+                      id="location"
+                      value={profile.location}
+                      onChange={(e) => setProfile({ ...profile, location: e.target.value })}
+                    />
+                  </div>
+                </div>
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'profile':
-        return <ProfileSettings />;
-      case 'security':
-        return <SecuritySettings />;
-      case 'notifications':
-        return <NotificationSettings />;
-      case 'preferences':
-        return <PreferencesSettings />;
-      case 'project-settings':
-        return isAdmin ? <AdminSettings /> : null;
-      case 'account':
-        return <AccountManagement />;
-      default:
-        return null;
-    }
-  };
+                <div className="space-y-2">
+                  <Label htmlFor="bio">Bio</Label>
+                  <Textarea
+                    id="bio"
+                    value={profile.bio}
+                    onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                    rows={4}
+                  />
+                </div>
 
-  return (
-    <div className="p-6 flex space-x-6">
-      <div className="w-64 flex-shrink-0">
-        <SettingsSidebar activeTab={activeTab} onTabChange={setActiveTab} isAdmin={isAdmin} />
-      </div>
-      <div className="flex-1">
-        {renderContent()}
-      </div>
+                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                  Save Changes
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </TabsContent>
+
+        <TabsContent value="security">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle>Security Settings</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Two-Factor Authentication</h4>
+                      <p className="text-sm text-gray-500">Add an extra layer of security to your account</p>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-4">
+                    <h4 className="font-medium">Change Password</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="current-password">Current Password</Label>
+                        <Input id="current-password" type="password" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-password">New Password</Label>
+                        <Input id="new-password" type="password" />
+                      </div>
+                    </div>
+                    <Button variant="outline">Update Password</Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </TabsContent>
+
+        <TabsContent value="notifications">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle>Notification Preferences</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  {Object.entries(notifications).map(([key, value]) => (
+                    <div key={key} className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium capitalize">
+                          {key.replace(/([A-Z])/g, ' $1').trim()}
+                        </h4>
+                        <p className="text-sm text-gray-500">
+                          {key === 'emailNotifications' && 'Receive notifications via email'}
+                          {key === 'pushNotifications' && 'Receive push notifications in browser'}
+                          {key === 'taskAssignments' && 'Get notified when tasks are assigned to you'}
+                          {key === 'deadlineReminders' && 'Receive reminders for upcoming deadlines'}
+                          {key === 'projectUpdates' && 'Get notified of project status changes'}
+                          {key === 'weeklyReports' && 'Receive weekly progress reports'}
+                        </p>
+                      </div>
+                      <Switch
+                        checked={value}
+                        onCheckedChange={(checked) => setNotifications({ ...notifications, [key]: checked })}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </TabsContent>
+
+        <TabsContent value="preferences">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle>Appearance & Preferences</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium">Dark Mode</h4>
+                    <p className="text-sm text-gray-500">Toggle between light and dark themes</p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Sun className="w-4 h-4" />
+                    <Switch checked={isDarkMode} onCheckedChange={onThemeToggle} />
+                    <Moon className="w-4 h-4" />
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-4">
+                  <h4 className="font-medium">Language & Region</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Language</Label>
+                      <select className="w-full p-2 border rounded-md bg-background">
+                        <option>English (US)</option>
+                        <option>Spanish</option>
+                        <option>French</option>
+                        <option>German</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Timezone</Label>
+                      <select className="w-full p-2 border rounded-md bg-background">
+                        <option>Pacific Time (PT)</option>
+                        <option>Eastern Time (ET)</option>
+                        <option>Central Time (CT)</option>
+                        <option>Mountain Time (MT)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

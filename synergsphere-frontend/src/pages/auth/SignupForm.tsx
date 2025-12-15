@@ -20,7 +20,7 @@ const SignupForm = () => {
     setSuccess('');
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/register", {
+      const res = await fetch("http://localhost:5001/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password, role })
@@ -40,7 +40,8 @@ const SignupForm = () => {
       }, 2000);
 
     } catch (err) {
-      setError("An error occurred. Please try again.");
+      console.error('Signup error:', err);
+      setError("Network error. Please ensure the backend server is running on port 5001.");
     }
   };
 
@@ -69,6 +70,7 @@ const SignupForm = () => {
             placeholder="John Doe"
             value={name}
             onChange={(e) => setFullname(e.target.value)}
+            autoComplete="name"
             required
           />
         </div>
@@ -80,6 +82,7 @@ const SignupForm = () => {
             placeholder="name@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
             required
           />
         </div>
@@ -90,6 +93,7 @@ const SignupForm = () => {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            autoComplete="new-password"
             required
           />
         </div>

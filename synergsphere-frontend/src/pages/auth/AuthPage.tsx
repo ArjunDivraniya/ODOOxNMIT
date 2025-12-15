@@ -1,9 +1,19 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import LoginForm from './LoginForm';
 import SignupForm from './SignupForm';
+import { useAuth } from '@/hooks/use-auth';
+import { useNavigate } from 'react-router-dom';
 
 const AuthPage = () => {
   const [isLoginView, setIsLoginView] = useState(true);
+  const { isAuthenticated, isAdmin } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(isAdmin ? '/admin/dashboard' : '/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, isAdmin, navigate]);
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">

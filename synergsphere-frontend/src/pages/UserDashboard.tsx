@@ -195,7 +195,6 @@ export default function UserDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
       <div className="flex">
         <UserSidebar
           activeTab={activeTab}

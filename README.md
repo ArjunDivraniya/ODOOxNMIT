@@ -9,9 +9,9 @@
 ## 🔗 Quick Links
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Available-success?style=for-the-badge&logo=vercel)](https://your-demo-link.com)
-[![Video Walkthrough](https://img.shields.io/badge/Video-Walkthrough-red?style=for-the-badge&logo=youtube)](https://your-video-link.com)
+[![Video Walkthrough](https://img.shields.io/badge/Video-Walkthrough-red?style=for-the-badge&logo=youtube)](https://youtu.be/lj_SfjZODq0?si=gxZ0rc3SjOkqo5kB)
 [![API Documentation](https://img.shields.io/badge/API-Postman%20Docs-orange?style=for-the-badge&logo=postman)](https://your-postman-link.com)
-[![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-blue?style=for-the-badge&logo=github)](https://github.com/yourusername/synergsphere)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-blue?style=for-the-badge&logo=github)](https://github.com/ArjunDivraniya/ODOOxNMIT.git)
 
 ---
 

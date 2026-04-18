@@ -2,12 +2,24 @@ import { useEffect, useState } from 'react';
 import LoginForm from './LoginForm';
 import SignupForm from './SignupForm';
 import { useAuth } from '@/hooks/use-auth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const AuthPage = () => {
-  const [isLoginView, setIsLoginView] = useState(true);
+  const [searchParams] = useSearchParams();
+  const mode = searchParams.get('mode');
+  const [isLoginView, setIsLoginView] = useState(mode !== 'signup');
   const { isAuthenticated, isAdmin } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (mode === 'signup') {
+      setIsLoginView(false);
+      return;
+    }
+    if (mode === 'login') {
+      setIsLoginView(true);
+    }
+  }, [mode]);
 
   useEffect(() => {
     if (isAuthenticated) {

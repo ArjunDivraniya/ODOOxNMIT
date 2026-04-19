@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { buildApiUrl } from '@/lib/api-base';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -20,7 +21,7 @@ const LoginForm = () => {
     setError("");
   
     try {
-      const res = await fetch("http://localhost:5001/api/auth/login", {
+      const res = await fetch(buildApiUrl('/auth/login'), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
@@ -54,7 +55,7 @@ const LoginForm = () => {
   
     } catch (err) {
       console.error('Login error:', err);
-      setError("Network error. Please ensure the backend server is running on port 5001.");
+      setError('Network error. Please verify backend URL and server availability.');
     }
   };
 

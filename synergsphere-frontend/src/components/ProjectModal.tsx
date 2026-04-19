@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { mockUsers } from '@/lib/mockData';
+import { buildApiUrl } from '@/lib/api-base';
 
 interface ProjectModalProps {
   open: boolean;
@@ -62,7 +63,7 @@ export default function ProjectModal({ open, onOpenChange }: ProjectModalProps) 
     };
   
     try {
-      const res = await fetch("http://localhost:5000/api/projects", {
+      const res = await fetch(buildApiUrl('/projects'), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

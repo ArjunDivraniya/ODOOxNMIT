@@ -1,6 +1,6 @@
 // API Service Layer for Backend Communication
 
-const API_BASE_URL = 'http://localhost:5001/api';
+import { API_BASE_URL } from '@/lib/api-base';
 
 // Helper to get auth header
 const getAuthHeader = () => {

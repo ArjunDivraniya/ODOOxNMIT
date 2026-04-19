@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from 'react-router-dom';
+import { buildApiUrl } from '@/lib/api-base';
 
 const SignupForm = () => {
   const [name, setFullname] = useState('');
@@ -20,7 +21,7 @@ const SignupForm = () => {
     setSuccess('');
 
     try {
-      const res = await fetch("http://localhost:5001/api/auth/register", {
+      const res = await fetch(buildApiUrl('/auth/register'), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password, role })
@@ -41,7 +42,7 @@ const SignupForm = () => {
 
     } catch (err) {
       console.error('Signup error:', err);
-      setError("Network error. Please ensure the backend server is running on port 5001.");
+      setError('Network error. Please verify backend URL and server availability.');
     }
   };
 

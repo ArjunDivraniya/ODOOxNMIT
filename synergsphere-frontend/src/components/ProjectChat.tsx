@@ -299,6 +299,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { currentUser } from "@/lib/userMockData";
 import { format } from "date-fns";
+import { buildApiUrl } from '@/lib/api-base';
 
 interface ChatMessage {
   _id?: string;
@@ -322,7 +323,7 @@ export default function ProjectChat({ projectId }: ProjectChatProps) {
 
   // Fetch messages from backend
   useEffect(() => {
-    fetch(`http://localhost:5000/api/messages/${projectId}`)
+    fetch(buildApiUrl(`/messages/${projectId}`))
       .then(res => res.json())
       .then(data => setMessages(data))
       .catch(err => console.error(err));
@@ -349,7 +350,7 @@ export default function ProjectChat({ projectId }: ProjectChatProps) {
     };
 
     try {
-      const res = await fetch("http://localhost:5000/api/messages", {
+      const res = await fetch(buildApiUrl('/messages'), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(message),

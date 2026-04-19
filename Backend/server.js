@@ -11,10 +11,35 @@ import { protect, restrictTo } from "./middleware/authMiddleware.js";
 import cors from "cors";
 
 const app = express();
+
+const allowedOrigins = (process.env.FRONTEND_URLS || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const defaultOrigins = [
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "https://arjundivraniya.in",
+];
+
+const resolvedOrigins = allowedOrigins.length > 0 ? allowedOrigins : defaultOrigins;
+
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+  return resolvedOrigins.includes(origin);
+};
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: (origin, callback) => {
+      if (isAllowedOrigin(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error("Not allowed by CORS"));
+    },
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   },
@@ -23,7 +48,13 @@ const io = new Server(server, {
 connectDB();
 
 const corsOptions = {
-  origin: ["http://localhost:3000", "http://localhost:5173"],
+  origin: (origin, callback) => {
+    if (isAllowedOrigin(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error("Not allowed by CORS"));
+  },
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,

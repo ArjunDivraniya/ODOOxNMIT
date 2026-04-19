@@ -12,22 +12,26 @@ import cors from "cors";
 
 const app = express();
 
+const normalizeOrigin = (origin) => origin.replace(/\/+$/, "");
+
 const allowedOrigins = (process.env.FRONTEND_URLS || "")
   .split(",")
   .map((origin) => origin.trim())
-  .filter(Boolean);
+  .filter(Boolean)
+  .map(normalizeOrigin);
 
 const defaultOrigins = [
   "http://localhost:3000",
   "http://localhost:5173",
   "https://arjundivraniya.in",
+  "https://odo-ox-nmit-4jm1.vercel.app",
 ];
 
-const resolvedOrigins = allowedOrigins.length > 0 ? allowedOrigins : defaultOrigins;
+const resolvedOrigins = (allowedOrigins.length > 0 ? allowedOrigins : defaultOrigins).map(normalizeOrigin);
 
 const isAllowedOrigin = (origin) => {
   if (!origin) return true;
-  return resolvedOrigins.includes(origin);
+  return resolvedOrigins.includes(normalizeOrigin(origin));
 };
 
 const server = http.createServer(app);

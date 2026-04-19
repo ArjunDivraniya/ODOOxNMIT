@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { User, Shield, Bell, Palette, Building, Settings as SettingsIcon, Moon, Sun } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,20 +10,46 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { userApi } from '@/services/api';
 
 interface SettingsProps {
-  isDarkMode: boolean;
-  onThemeToggle: () => void;
+  isDarkMode?: boolean;
+  onThemeToggle?: () => void;
 }
 
-export default function Settings({ isDarkMode, onThemeToggle }: SettingsProps) {
+export default function Settings({ isDarkMode = false, onThemeToggle = () => {} }: SettingsProps) {
   const [profile, setProfile] = useState({
-    name: 'Alex Johnson',
-    email: 'alex.johnson@synergysphere.com',
+    name: '',
+    email: '',
     bio: 'System Administrator with 5+ years of experience in team management and project coordination.',
     phone: '+1 (555) 123-4567',
     location: 'San Francisco, CA'
   });
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const data = await userApi.getProfile();
+        setProfile((prev) => ({
+          ...prev,
+          name: data.name || '',
+          email: data.email || '',
+        }));
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+      }
+    };
+
+    loadProfile();
+  }, []);
+
+  const saveProfile = async () => {
+    try {
+      await userApi.updateProfile({ name: profile.name, email: profile.email });
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+    }
+  };
 
   const [notifications, setNotifications] = useState({
     emailNotifications: true,
@@ -130,7 +156,7 @@ export default function Settings({ isDarkMode, onThemeToggle }: SettingsProps) {
                   />
                 </div>
 
-                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                <Button onClick={saveProfile} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
                   Save Changes
                 </Button>
               </CardContent>

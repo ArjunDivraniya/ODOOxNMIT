@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Filter, Calendar, Flag, FolderOpen, MoreHorizontal, Trash2, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,9 +24,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { userTasks, UserTask } from '@/lib/userMockData';
-import { deleteTask } from '@/lib/mockData';
 import { format } from 'date-fns';
+import { taskApi } from '@/services/api';
+
+type UserTask = {
+  id: string;
+  title: string;
+  description: string;
+  status: 'todo' | 'in-progress' | 'done';
+  priority: 'low' | 'medium' | 'high';
+  dueDate: string;
+  projectName: string;
+};
 
 const statusColors = {
   todo: 'bg-gray-100 text-gray-700',
@@ -41,16 +50,38 @@ const priorityColors = {
 };
 
 export default function MyTasksPage() {
-  const [tasks, setTasks] = useState(userTasks);
+  const [tasks, setTasks] = useState<UserTask[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('dueDate');
 
-  const filteredTasks = tasks.filter(task => {
+  useEffect(() => {
+    const loadTasks = async () => {
+      try {
+        const data = await taskApi.getUserTasks();
+        const mappedTasks: UserTask[] = (Array.isArray(data) ? data : []).map((task: any) => ({
+          id: task._id,
+          title: task.title,
+          description: task.description || '',
+          status: task.status,
+          priority: task.priority,
+          dueDate: task.dueDate,
+          projectName: task.project?.name || 'Project',
+        }));
+        setTasks(mappedTasks);
+      } catch (error) {
+        console.error('Failed to fetch tasks:', error);
+      }
+    };
+
+    loadTasks();
+  }, []);
+
+  const filteredTasks = useMemo(() => tasks.filter(task => {
     if (statusFilter === 'all') return true;
     return task.status === statusFilter;
-  });
+  }), [tasks, statusFilter]);
 
-  const sortedTasks = [...filteredTasks].sort((a, b) => {
+  const sortedTasks = useMemo(() => [...filteredTasks].sort((a, b) => {
     const priorityOrder = { high: 3, medium: 2, low: 1 };
     
     switch (sortBy) {
@@ -64,17 +95,26 @@ export default function MyTasksPage() {
       default:
         return 0;
     }
-  });
+  }), [filteredTasks, sortBy]);
 
-  const updateTaskStatus = (taskId: string, newStatus: UserTask['status']) => {
-    setTasks(prev => prev.map(task => 
-      task.id === taskId ? { ...task, status: newStatus } : task
-    ));
+  const updateTaskStatus = async (taskId: string, newStatus: UserTask['status']) => {
+    try {
+      await taskApi.update(taskId, { status: newStatus });
+      setTasks(prev => prev.map(task => 
+        task.id === taskId ? { ...task, status: newStatus } : task
+      ));
+    } catch (error) {
+      console.error('Failed to update task status:', error);
+    }
   };
 
-  const handleDeleteTask = (taskId: string) => {
-    deleteTask(taskId);
-    setTasks(prev => prev.filter(t => t.id !== taskId));
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      await taskApi.delete(taskId);
+      setTasks(prev => prev.filter(t => t.id !== taskId));
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+    }
   };
 
   const getDeadlineColor = (dueDate: string) => {

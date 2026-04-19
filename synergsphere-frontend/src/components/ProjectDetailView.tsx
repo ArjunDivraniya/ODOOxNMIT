@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Users, Calendar, BarChart3, MoreHorizontal, Trash2, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,9 +12,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import KanbanBoard from './KanbanBoard';
 import ProjectChat from './ProjectChat';
-import { userProjects, userTasks } from '@/lib/userMockData';
-import { deleteProject } from '@/lib/mockData';
 import { format } from 'date-fns';
+import { projectApi, taskApi } from '@/services/api';
+import { useAuth } from '@/hooks/use-auth';
 
 interface ProjectDetailViewProps {
   projectId: string;
@@ -29,12 +29,54 @@ const statusColors = {
 };
 
 export default function ProjectDetailView({ projectId, onBack }: ProjectDetailViewProps) {
-  const project = userProjects.find(p => p.id === projectId);
-  const projectTasks = userTasks.filter(t => t.projectId === projectId);
+  const [project, setProject] = useState<any | null>(null);
+  const [projectTasks, setProjectTasks] = useState<any[]>([]);
+  const { user } = useAuth();
 
-  const handleDeleteProject = () => {
-    deleteProject(projectId);
-    onBack();
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [projectData, tasksData] = await Promise.all([
+          projectApi.getById(projectId),
+          taskApi.getByProject(projectId),
+        ]);
+        setProject(projectData);
+        setProjectTasks(Array.isArray(tasksData) ? tasksData : []);
+      } catch (error) {
+        console.error('Failed to load project detail:', error);
+      }
+    };
+
+    loadData();
+  }, [projectId]);
+
+  const projectStatus = useMemo(() => {
+    if (!project) return 'planning';
+    const now = new Date();
+    if (now < new Date(project.startDate)) return 'planning';
+    if (now > new Date(project.endDate)) return 'completed';
+    return 'active';
+  }, [project]);
+
+  const projectProgress = useMemo(() => {
+    const total = projectTasks.length;
+    if (total === 0) return 0;
+    const done = projectTasks.filter((task) => task.status === 'done').length;
+    return Math.round((done / total) * 100);
+  }, [projectTasks]);
+
+  const role = useMemo(() => {
+    const createdById = String(project?.createdBy?._id || project?.createdBy?.id || '');
+    return user?.id === createdById ? 'owner' : 'member';
+  }, [project, user?.id]);
+
+  const handleDeleteProject = async () => {
+    try {
+      await projectApi.delete(projectId);
+      onBack();
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+    }
   };
 
   if (!project) {
@@ -89,11 +131,11 @@ export default function ProjectDetailView({ projectId, onBack }: ProjectDetailVi
             <div className="flex-1">
               <div className="flex items-center space-x-3 mb-2">
                 <h1 className="text-2xl font-bold text-gray-900">{project.name}</h1>
-                <Badge className={statusColors[project.status]}>
-                  {project.status}
+                <Badge className={statusColors[projectStatus as keyof typeof statusColors]}>
+                  {projectStatus}
                 </Badge>
                 <Badge variant="outline" className="capitalize">
-                  {project.role}
+                  {role}
                 </Badge>
               </div>
               <p className="text-gray-600 mb-4">{project.description}</p>
@@ -110,7 +152,7 @@ export default function ProjectDetailView({ projectId, onBack }: ProjectDetailVi
                 <div className="flex justify-between text-sm">
                   <span className="font-medium">{project.progress}%</span>
                 </div>
-                <Progress value={project.progress} className="h-2" />
+                <Progress value={projectProgress} className="h-2" />
               </div>
             </div>
 
@@ -120,13 +162,13 @@ export default function ProjectDetailView({ projectId, onBack }: ProjectDetailVi
                 <span>Team Members</span>
               </div>
               <div className="flex -space-x-2">
-                {project.members.map((member) => (
+                {(project.teamMembers || []).map((member: any) => (
                   <div
-                    key={member.id}
+                    key={member._id || member.id}
                     className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white"
                     title={member.name}
                   >
-                    <span className="text-white font-medium text-xs">{member.avatar}</span>
+                    <span className="text-white font-medium text-xs">{(member.name || 'U').charAt(0).toUpperCase()}</span>
                   </div>
                 ))}
               </div>
@@ -139,9 +181,7 @@ export default function ProjectDetailView({ projectId, onBack }: ProjectDetailVi
               </div>
               <div className="text-sm">
                 <p className="font-medium">{format(new Date(project.startDate), 'MMM dd')} - {format(new Date(project.endDate), 'MMM dd, yyyy')}</p>
-                {project.nextDeadline && (
-                  <p className="text-amber-600">Next: {format(new Date(project.nextDeadline), 'MMM dd')}</p>
-                )}
+                <p className="text-amber-600">Next: {format(new Date(project.endDate), 'MMM dd')}</p>
               </div>
             </div>
 
@@ -162,7 +202,7 @@ export default function ProjectDetailView({ projectId, onBack }: ProjectDetailVi
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Task Board - Takes 2 columns */}
         <div className="lg:col-span-2">
-          <KanbanBoard />
+          <KanbanBoard projectId={projectId} />
         </div>
 
         {/* Project Chat - Takes 1 column */}

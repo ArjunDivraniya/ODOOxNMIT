@@ -1,10 +1,24 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Plus, Calendar, Flag, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { userTasks, UserTask } from '@/lib/userMockData';
 import { format } from 'date-fns';
+import { taskApi } from '@/services/api';
+
+type UserTask = {
+  id: string;
+  title: string;
+  description: string;
+  status: 'todo' | 'in-progress' | 'done';
+  priority: 'low' | 'medium' | 'high';
+  assignee: {
+    name: string;
+    avatar: string;
+  };
+  dueDate: string;
+  projectName: string;
+};
 
 const columns = [
   { id: 'todo', title: 'To-Do', color: 'bg-gray-50' },
@@ -18,12 +32,41 @@ const priorityColors = {
   high: 'bg-red-100 text-red-700'
 };
 
-export default function KanbanBoard() {
-  const [tasks, setTasks] = useState(userTasks);
+export default function KanbanBoard({ projectId }: { projectId?: string }) {
+  const [tasks, setTasks] = useState<UserTask[]>([]);
 
-  const getTasksByStatus = (status: string) => {
-    return tasks.filter(task => task.status === status);
-  };
+  useEffect(() => {
+    const loadTasks = async () => {
+      try {
+        if (!projectId) {
+          setTasks([]);
+          return;
+        }
+
+        const data = await taskApi.getByProject(projectId);
+        const mapped = (Array.isArray(data) ? data : []).map((task: any) => ({
+          id: task._id,
+          title: task.title,
+          description: task.description || '',
+          status: task.status === 'in-review' ? 'in-progress' : task.status,
+          priority: task.priority,
+          assignee: {
+            name: task.assignedTo?.name || 'Unassigned',
+            avatar: (task.assignedTo?.name || 'U').charAt(0).toUpperCase(),
+          },
+          dueDate: task.dueDate,
+          projectName: task.project?.name || 'Project',
+        }));
+        setTasks(mapped);
+      } catch (error) {
+        console.error('Failed to fetch kanban tasks:', error);
+      }
+    };
+
+    loadTasks();
+  }, [projectId]);
+
+  const getTasksByStatus = (status: string) => tasks.filter(task => task.status === status);
   
   const TaskCard = ({ task }: { task: UserTask }) => (
     <Card className="mb-3 hover:shadow-md transition-shadow cursor-pointer">

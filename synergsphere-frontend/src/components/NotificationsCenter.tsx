@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Bell, Check, X, Eye, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,8 +10,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { userNotifications, UserNotification } from '@/lib/userMockData';
 import { format } from 'date-fns';
+import { notificationApi } from '@/services/api';
+
+type UserNotification = {
+  id: string;
+  title: string;
+  message: string;
+  type: 'task_assigned' | 'deadline_approaching' | 'project_update' | 'mention' | 'invitation';
+  read: boolean;
+  actionRequired: boolean;
+  timestamp: string;
+  projectId?: string;
+};
 
 const notificationIcons = {
   task_assigned: '📋',
@@ -30,28 +41,74 @@ const notificationColors = {
 };
 
 export default function NotificationsCenter() {
-  const [notifications, setNotifications] = useState(userNotifications);
+  const [notifications, setNotifications] = useState<UserNotification[]>([]);
   const [filter, setFilter] = useState<string>('all');
 
-  const filteredNotifications = notifications.filter(notification => {
+  useEffect(() => {
+    const loadNotifications = async () => {
+      try {
+        const data = await notificationApi.getAll();
+        const mapped: UserNotification[] = (Array.isArray(data) ? data : []).map((notification: any) => ({
+          id: notification._id,
+          title: notification.title,
+          message: notification.message,
+          type: mapNotificationType(notification.type),
+          read: notification.isRead,
+          actionRequired: notification.type === 'project_invite',
+          timestamp: notification.createdAt,
+          projectId: notification.project?._id,
+        }));
+        setNotifications(mapped);
+      } catch (error) {
+        console.error('Failed to fetch notifications:', error);
+      }
+    };
+
+    loadNotifications();
+  }, []);
+
+  const mapNotificationType = (apiType: string): UserNotification['type'] => {
+    if (apiType === 'project_invite') return 'invitation';
+    if (apiType === 'deadline_reminder') return 'deadline_approaching';
+    if (apiType === 'message_mention') return 'mention';
+    if (apiType === 'task_assigned') return 'task_assigned';
+    return 'project_update';
+  };
+
+  const filteredNotifications = useMemo(() => notifications.filter(notification => {
     if (filter === 'all') return true;
     if (filter === 'unread') return !notification.read;
     if (filter === 'action-required') return notification.actionRequired;
     return notification.type === filter;
-  });
+  }), [notifications, filter]);
 
-  const markAsRead = (notificationId: string) => {
-    setNotifications(prev => prev.map(notification => 
-      notification.id === notificationId ? { ...notification, read: true } : notification
-    ));
+  const markAsRead = async (notificationId: string) => {
+    try {
+      await notificationApi.markAsRead(notificationId);
+      setNotifications(prev => prev.map(notification => 
+        notification.id === notificationId ? { ...notification, read: true } : notification
+      ));
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(notification => ({ ...notification, read: true })));
+  const markAllAsRead = async () => {
+    try {
+      await notificationApi.markAllAsRead();
+      setNotifications(prev => prev.map(notification => ({ ...notification, read: true })));
+    } catch (error) {
+      console.error('Failed to mark all notifications as read:', error);
+    }
   };
 
-  const deleteNotification = (notificationId: string) => {
-    setNotifications(prev => prev.filter(notification => notification.id !== notificationId));
+  const deleteNotification = async (notificationId: string) => {
+    try {
+      await notificationApi.delete(notificationId);
+      setNotifications(prev => prev.filter(notification => notification.id !== notificationId));
+    } catch (error) {
+      console.error('Failed to delete notification:', error);
+    }
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;

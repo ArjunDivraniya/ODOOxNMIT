@@ -5,17 +5,23 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
-import ProjectInvitations from '@/components/ProjectInvitations';
 import MyProjectsView from '@/components/MyProjectsView';
 import MyTasksPage from '@/components/MyTasksPage';
 import NotificationsCenter from '@/components/NotificationsCenter';
 import ProjectDetailView from '@/components/ProjectDetailView';
 import Settings from '@/components/Settings';
-import { userDashboardStats } from '@/lib/userMockData';
 import { Button } from '@/components/ui/button';
 import { BarChart3 } from 'lucide-react';
+import { dashboardApi } from '@/services/api';
 
-const DashboardOverview = ({ onProjectSelect }: { onProjectSelect: (projectId: string) => void }) => (
+type UserStats = {
+  totalProjectsJoined: number;
+  activeTasks: number;
+  completedTasks: number;
+  upcomingDeadlines: number;
+};
+
+const DashboardOverview = ({ onProjectSelect, stats }: { onProjectSelect: (projectId: string) => void; stats: UserStats }) => (
   <div className="p-6">
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       <Card>
@@ -23,7 +29,7 @@ const DashboardOverview = ({ onProjectSelect }: { onProjectSelect: (projectId: s
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Projects Joined</p>
-              <p className="text-3xl font-bold text-gray-900">{userDashboardStats.totalProjectsJoined}</p>
+              <p className="text-3xl font-bold text-gray-900">{stats.totalProjectsJoined}</p>
             </div>
             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
               <TrendingUp className="w-6 h-6 text-blue-600" />
@@ -36,7 +42,7 @@ const DashboardOverview = ({ onProjectSelect }: { onProjectSelect: (projectId: s
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Active Tasks</p>
-              <p className="text-3xl font-bold text-gray-900">{userDashboardStats.activeTasks}</p>
+              <p className="text-3xl font-bold text-gray-900">{stats.activeTasks}</p>
             </div>
             <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
               <Clock className="w-6 h-6 text-amber-600" />
@@ -49,7 +55,7 @@ const DashboardOverview = ({ onProjectSelect }: { onProjectSelect: (projectId: s
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Completed Tasks</p>
-              <p className="text-3xl font-bold text-gray-900">{userDashboardStats.completedTasks}</p>
+              <p className="text-3xl font-bold text-gray-900">{stats.completedTasks}</p>
             </div>
             <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
               <CheckSquare className="w-6 h-6 text-green-600" />
@@ -62,7 +68,7 @@ const DashboardOverview = ({ onProjectSelect }: { onProjectSelect: (projectId: s
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Upcoming Deadlines</p>
-              <p className="text-3xl font-bold text-gray-900">{userDashboardStats.upcomingDeadlines}</p>
+              <p className="text-3xl font-bold text-gray-900">{stats.upcomingDeadlines}</p>
             </div>
             <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
               <Clock className="w-6 h-6 text-red-600" />
@@ -79,7 +85,6 @@ const DashboardOverview = ({ onProjectSelect }: { onProjectSelect: (projectId: s
         <p className="text-gray-500">Task progress graph placeholder...</p>
       </CardContent>
     </Card>
-    <ProjectInvitations />
     <MyProjectsView onProjectSelect={onProjectSelect} />
   </div>
 );
@@ -89,6 +94,12 @@ export default function UserDashboard() {
   const initialTab = searchParams.get('tab') || 'dashboard';
   const [activeTab, setActiveTab] = useState(initialTab);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [stats, setStats] = useState<UserStats>({
+    totalProjectsJoined: 0,
+    activeTasks: 0,
+    completedTasks: 0,
+    upcomingDeadlines: 0,
+  });
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -102,6 +113,21 @@ export default function UserDashboard() {
     const tabFromUrl = searchParams.get('tab') || 'dashboard';
     setActiveTab(tabFromUrl);
   }, [searchParams]);
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const response = await dashboardApi.getUserStats();
+        setStats(response);
+      } catch (error) {
+        console.error('Failed to load dashboard stats:', error);
+      }
+    };
+
+    if (user) {
+      loadStats();
+    }
+  }, [user]);
 
   const userNavigation = [
     { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
@@ -124,7 +150,7 @@ export default function UserDashboard() {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <DashboardOverview onProjectSelect={handleProjectSelect} />;
+        return <DashboardOverview onProjectSelect={handleProjectSelect} stats={stats} />;
       case 'projects':
         return (
           <div className="p-6">
@@ -141,11 +167,11 @@ export default function UserDashboard() {
             projectId={selectedProjectId}
             onBack={handleBackToProjects}
           />
-        ) : <DashboardOverview onProjectSelect={handleProjectSelect} />;
+        ) : <DashboardOverview onProjectSelect={handleProjectSelect} stats={stats} />;
       case 'settings':
         return <Settings />;
       default:
-        return <DashboardOverview onProjectSelect={handleProjectSelect} />;
+        return <DashboardOverview onProjectSelect={handleProjectSelect} stats={stats} />;
     }
   };
 

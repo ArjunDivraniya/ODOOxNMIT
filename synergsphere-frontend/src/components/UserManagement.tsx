@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, MoreVertical, Mail, Phone, MapPin, Edit, Trash2, UserPlus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,19 +27,49 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { mockUsers, User } from '../lib/mockData';
+import { userApi } from '@/services/api';
+
+type User = {
+  id: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'user';
+  avatar: string;
+  status: 'active';
+};
 
 export default function UserManagement() {
-  const [users, setUsers] = useState(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [newUser, setNewUser] = useState<Omit<User, 'id' | 'avatar' | 'status'>>({
+  const [newUser, setNewUser] = useState<{ name: string; email: string; role: 'admin' | 'user' }>({
     name: '',
     email: '',
-    role: 'member'
+    role: 'user'
   });
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const data = await userApi.getAll();
+        const mappedUsers: User[] = (Array.isArray(data) ? data : []).map((user: any) => ({
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          avatar: user.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'U',
+          status: 'active',
+        }));
+        setUsers(mappedUsers);
+      } catch (error) {
+        console.error('Failed to fetch users:', error);
+      }
+    };
+
+    loadUsers();
+  }, []);
 
   const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -66,28 +96,51 @@ export default function UserManagement() {
   };
 
   const handleAddUser = () => {
-    const newId = (users.length + 1).toString();
-    const newAvatar = newUser.name.split(' ').map(n => n[0]).join('').toUpperCase();
-    const userWithDefaults: User = { ...newUser, id: newId, avatar: newAvatar, status: 'active' };
-    setUsers(prev => [...prev, userWithDefaults]);
-    setIsAddUserOpen(false);
-    setNewUser({
-      name: '',
-      email: '',
-      role: 'member',
-    });
+    userApi.create({
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role,
+      password: 'Temp@12345',
+    })
+      .then((response) => {
+        const created = response.user;
+        setUsers((prev) => [
+          {
+            id: created.id || created._id,
+            name: created.name,
+            email: created.email,
+            role: created.role,
+            avatar: created.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'U',
+            status: 'active',
+          },
+          ...prev,
+        ]);
+        setIsAddUserOpen(false);
+        setNewUser({ name: '', email: '', role: 'user' });
+      })
+      .catch((error) => console.error('Failed to create user:', error));
   };
 
   const handleEditUser = () => {
     if (editingUser) {
-      setUsers(prev => prev.map(user => user.id === editingUser.id ? editingUser : user));
-      setIsEditUserOpen(false);
-      setEditingUser(null);
+      userApi.update(editingUser.id, {
+        name: editingUser.name,
+        email: editingUser.email,
+        role: editingUser.role,
+      })
+        .then(() => {
+          setUsers(prev => prev.map(user => user.id === editingUser.id ? editingUser : user));
+          setIsEditUserOpen(false);
+          setEditingUser(null);
+        })
+        .catch((error) => console.error('Failed to update user:', error));
     }
   };
 
   const handleDeleteUser = (userId: string) => {
-    setUsers(prev => prev.filter(user => user.id !== userId));
+    userApi.delete(userId)
+      .then(() => setUsers(prev => prev.filter(user => user.id !== userId)))
+      .catch((error) => console.error('Failed to delete user:', error));
   };
   
   return (
@@ -135,13 +188,12 @@ export default function UserManagement() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="role">Role</Label>
-                <Select value={newUser.role} onValueChange={(value) => setNewUser({ ...newUser, role: value as 'admin' | 'manager' | 'member' })}>
+                <Select value={newUser.role} onValueChange={(value) => setNewUser({ ...newUser, role: value as 'admin' | 'user' })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="member">Member</SelectItem>
-                    <SelectItem value="manager">Manager</SelectItem>
+                    <SelectItem value="user">User</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
                   </SelectContent>
                 </Select>
@@ -277,13 +329,12 @@ export default function UserManagement() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-role">Role</Label>
-              <Select value={editingUser?.role || 'member'} onValueChange={(value) => setEditingUser({ ...editingUser!, role: value as 'admin' | 'manager' | 'member' })}>
+              <Select value={editingUser?.role || 'user'} onValueChange={(value) => setEditingUser({ ...editingUser!, role: value as 'admin' | 'user' })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="member">Member</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="user">User</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>

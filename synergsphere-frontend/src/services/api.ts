@@ -85,9 +85,9 @@ export const taskApi = {
     description: string;
     status: string;
     priority: string;
-    deadline: string;
+    dueDate: string;
     assignedTo: string;
-    projectId: string;
+    project: string;
   }) => apiCall('/tasks', {
     method: 'POST',
     body: JSON.stringify(taskData),
@@ -98,7 +98,7 @@ export const taskApi = {
     description: string;
     status: string;
     priority: string;
-    deadline: string;
+    dueDate: string;
     assignedTo: string;
   }>) => apiCall(`/tasks/${taskId}`, {
     method: 'PUT',
@@ -109,11 +109,21 @@ export const taskApi = {
     method: 'DELETE',
   }),
   
-  getUserTasks: () => apiCall('/tasks/user'),
+  getUserTasks: () => apiCall('/tasks/my-tasks'),
 };
 
 // ==================== USER APIs ====================
 export const userApi = {
+  create: (userData: {
+    name: string;
+    email: string;
+    password: string;
+    role: 'user' | 'admin';
+  }) => apiCall('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(userData),
+  }),
+
   getAll: () => apiCall('/auth/users'),
   
   getById: (userId: string) => apiCall(`/auth/users/${userId}`),
@@ -132,24 +142,37 @@ export const userApi = {
   delete: (userId: string) => apiCall(`/auth/users/${userId}`, {
     method: 'DELETE',
   }),
+
+  getProfile: () => apiCall('/auth/profile'),
+
+  updateProfile: (profileData: Partial<{ name: string; email: string }>) => apiCall('/auth/profile', {
+    method: 'PUT',
+    body: JSON.stringify(profileData),
+  }),
 };
 
 // ==================== NOTIFICATION APIs ====================
 export const notificationApi = {
   getAll: () => apiCall('/notifications'),
+
+  getUnreadCount: () => apiCall('/notifications/unread-count'),
   
   markAsRead: (notificationId: string) => apiCall(`/notifications/${notificationId}/read`, {
     method: 'PUT',
   }),
   
-  markAllAsRead: () => apiCall('/notifications/read-all', {
+  markAllAsRead: () => apiCall('/notifications/mark-all-read', {
     method: 'PUT',
+  }),
+
+  delete: (notificationId: string) => apiCall(`/notifications/${notificationId}`, {
+    method: 'DELETE',
   }),
 };
 
 // ==================== MESSAGE APIs ====================
 export const messageApi = {
-  getByProject: (projectId: string) => apiCall(`/messages/project/${projectId}`),
+  getByProject: (projectId: string) => apiCall(`/messages/${projectId}`),
   
   send: (messageData: {
     content: string;

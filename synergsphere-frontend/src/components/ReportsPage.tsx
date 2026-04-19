@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { TrendingUp, Users, CheckCircle, AlertCircle, Target, Clock } from 'lucide-react';
-import { projectApi, taskApi, userApi } from '@/services/api';
+import { dashboardApi } from '@/services/api';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -15,8 +15,8 @@ interface DashboardStats {
   completedTasks: number;
   inProgressTasks: number;
   totalUsers: number;
-  projectData: any[];
-  taskStatusData: any[];
+  projectData: Array<{ id: string; name: string; members: number; progress: number }>;
+  taskStatusData: Array<{ name: string; value: number }>;
 }
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
@@ -34,49 +34,8 @@ export default function ReportsPage() {
   const fetchReportsData = async () => {
     try {
       setLoading(true);
-      
-      // Fetch all data in parallel
-      const [projectsData, usersData] = await Promise.all([
-        projectApi.getAll().catch(() => ({ projects: [] })),
-        user?.role === 'admin' ? userApi.getAll().catch(() => ({ users: [] })) : Promise.resolve({ users: [] })
-      ]);
-
-      const projects = projectsData.projects || [];
-      const users = usersData.users || [];
-
-      // Calculate stats
-      const activeProjects = projects.filter((p: any) => 
-        new Date(p.endDate) > new Date()
-      ).length;
-      
-      const completedProjects = projects.length - activeProjects;
-
-      // Project timeline data
-      const projectData = projects.slice(0, 10).map((p: any) => ({
-        name: p.name.substring(0, 15) + (p.name.length > 15 ? '...' : ''),
-        members: p.teamMembers?.length || 0,
-        progress: 50, // Default since we don't have progress field
-      }));
-
-      // Mock task status data (since we need project-specific task queries)
-      const taskStatusData = [
-        { name: 'To Do', value: 30 },
-        { name: 'In Progress', value: 45 },
-        { name: 'Completed', value: 80 },
-        { name: 'Blocked', value: 10 },
-      ];
-
-      setStats({
-        totalProjects: projects.length,
-        activeProjects,
-        completedProjects,
-        totalTasks: 165, // Mock data
-        completedTasks: 80,
-        inProgressTasks: 45,
-        totalUsers: users.length,
-        projectData,
-        taskStatusData,
-      });
+      const data = await dashboardApi.getReportsData();
+      setStats(data);
     } catch (error: any) {
       toast({
         title: 'Error',

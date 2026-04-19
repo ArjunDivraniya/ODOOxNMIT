@@ -8,6 +8,11 @@ import taskRoutes from "./routes/taskRoutes.js";
 import messageRoutes from "./routes/messageRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import { protect, restrictTo } from "./middleware/authMiddleware.js";
+import {
+  getAdminDashboardStats,
+  getUserDashboardStats,
+  getReportsData,
+} from "./controllers/dashboardController.js";
 import cors from "cors";
 
 const app = express();
@@ -74,14 +79,10 @@ app.use("/api/tasks", taskRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/notifications", notificationRoutes);
 
-// Protected routes
-app.get("/api/admin/dashboard", protect, restrictTo("admin"), (req, res) => {
-  res.json({ message: `Welcome Admin ${req.user.name}` });
-});
-
-app.get("/api/user/dashboard", protect, restrictTo("user"), (req, res) => {
-  res.json({ message: `Welcome User ${req.user.name}` });
-});
+// Protected analytics routes
+app.get("/api/admin/dashboard", protect, restrictTo("admin"), getAdminDashboardStats);
+app.get("/api/user/dashboard", protect, getUserDashboardStats);
+app.get("/api/reports", protect, restrictTo("admin"), getReportsData);
 
 // WebSocket connection handling
 io.on("connection", (socket) => {
